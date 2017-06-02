@@ -6,6 +6,7 @@ namespace AppBundle\Command;
 use AppBundle\Entity\User;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\Console\Command\Command;
+use League\Csv\Reader;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Style\SymfonyStyle;
@@ -25,7 +26,8 @@ class CsvImportCommand extends Command
     {
         $this
             ->setName('csv:import')
-            ->setDescription('Imports a mock CSV File');
+            ->setDescription('Imports a  CSV File')
+            ->setHelp('This command will add data from a csv file to the db.');
 
     }
 
@@ -34,13 +36,20 @@ class CsvImportCommand extends Command
         $io = new SymfonyStyle($input, $output);
         $io->title('importing to db');
 
-        $user = (new User())
-            ->setUsername('Jan')
-            ->setLastname('buurten')
-            ->setEmail('jan@msn.com')
-            ->setAge(45);
+        $reader = Reader::createFromPath('%kernel.root_dir%/../src/AppBundle/Data/userdata.csv');
+        $results = $reader->fetchAssoc();
 
-        $this->em->persist($user);
+
+        foreach ($results as $row) {
+            $user = (new User())
+                ->setUsername($row['username'])
+                ->setLastName($row['lastname'])
+                ->setEmail($row['email'])
+                ->setAge($row['age']);
+
+            $this->em->persist($user);
+
+        }
         $this->em->flush();
 
         $io->success('success');
